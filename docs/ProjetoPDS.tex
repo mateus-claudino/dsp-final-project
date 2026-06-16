@@ -14,10 +14,31 @@
 \usepackage{scalefnt}
 \usepackage{booktabs}
 \usepackage[brazil]{babel}
+\usepackage{listings}
+\usepackage{color}
+
+\lstset{
+  language=Python,
+  basicstyle=\footnotesize\ttfamily,
+  breaklines=true,
+  breakatwhitespace=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=5,
+  numbersep=5pt,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{orange!80!black},
+  frame=single,
+  rulecolor=\color{black!30},
+  tabsize=4,
+  showstringspaces=false,
+  captionpos=b,
+}
 
 \begin{document}
 
-\title{Processamento Digital de Sinais: Nome do Algoritmo Utilizado}
+\title{Processamento Digital de Sinais: Filtragem FIR}
 
 \author{Nome do Autor 1, Nome do Autor 2, Nome do Autor 3 e Nome do Autor 4}
 
@@ -25,16 +46,53 @@
 
 \section{Fundamentação Teórica}
 
-Explicar o algoritmo de processamento digital de sinais utilizado. 
+% MERMAID FLOWCHART — renderizar separadamente em mermaid.live ou via CLI:
+% ```mermaid
+% flowchart TD
+%     A[Carregar sinais CSV\nsinal_2_ruido e sinal_2_semruido] --> B[Calcular vetor de tempo\nt = n / fs,  fs = 7680 Hz]
+%     B --> C[Análise espectral via FFT\nIdentificar energia do ruído por frequência]
+%     C --> D{Para cada combinação\njanela x ordem}
+%     D --> E[Projetar filtro FIR\nfirwin numtaps fc window]
+%     E --> F[Aplicar filtfilt\nFiltragem de fase zero para avaliação]
+%     F --> G[Calcular RMSE\nvs. sinal sem ruído]
+%     G --> D
+%     D --> H[Selecionar melhor configuração\nmenor RMSE]
+%     H --> I[Detecção de transitório\nRMS deslizante + detector de gradiente máximo]
+%     I --> J[Gerar gráficos PDF\ne atualizar tabela LaTeX]
+% ```
 
-Citar as referências bibliográficas utilizadas para a compreensão da fundamentação teórica do algoritmo. Por exemplo, para citar uma referência que trata de aplicações da \textit{Fast Fourier Transform} (FFT), você deve cadastrar os dados bibliográficos no arquivo ref.bib e chamar a citação da seguinte forma~\cite{cooley1969}. 
+% TODO: [Fundamentação Teórica — Filtros FIR pelo Método das Janelas]
+% Hint: Explique o método das janelas para projeto de filtros FIR. A ideia central é
+% truncar a resposta impulsiva ideal (infinita) h_ideal[n] = fc/fs * sinc(fc/fs * n)
+% multiplicando-a por uma janela temporal w[n] de comprimento finito N:
+%   h[n] = h_ideal[n] * w[n],   n = 0, 1, ..., N-1
+% A escolha da janela determina o compromisso entre largura da banda de transição
+% e atenuação na banda de rejeição (stop-band):
+%   - Hamming: atenuação ≈ 41 dB, ondulação passband ≈ 0.0194 dB
+%   - Blackman: atenuação ≈ 74 dB, banda de transição mais larga que Hamming
+%   - Kaiser (β=8.6): atenuação ≈ 60 dB, β ajustável — melhor controle do trade-off
+%
+% Hint: Destaque que filtros FIR de fase linear (Tipo I, N ímpar) introduzem
+% atraso de grupo constante de (N-1)/2 amostras. Para N=32 taps e fs=7680 Hz,
+% o atraso é 15/7680 ≈ 2,0 ms. Para N=128: 63/7680 ≈ 8,2 ms. Este atraso é
+% irrelevante em análise offline mas crítico em relés de proteção em tempo real.
+%
+% Hint: A detecção do transitório explora o fato de que a inserção de uma carga
+% não-linear produz uma mudança abrupta na potência do sinal. O RMS deslizante
+% sobre janelas de 1 ciclo (128 amostras) captura essa variação de energia;
+% o gradiente máximo do RMS deslizante identifica o ponto exato de mudança.
+% Este método é O(N) em complexidade, superior a métodos espectrais O(N log N).
+
+Explicar o algoritmo de processamento digital de sinais utilizado.
+
+Citar as referências bibliográficas utilizadas para a compreensão da fundamentação teórica do algoritmo. Por exemplo, para citar uma referência que trata de aplicações da \textit{Fast Fourier Transform} (FFT), você deve cadastrar os dados bibliográficos no arquivo ref.bib e chamar a citação da seguinte forma~\cite{cooley1969}.
 
 Detalhar e explicar seu equacionamento. Criar um pseudo-código (use o pacote algorithm) ou um fluxograma (usar uma figura) do algoritmo. A Figura~\ref{fig:flowchart} traz um exemplo de fluxograma.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.45\textwidth]{ex_fig1.pdf}
-\caption{Exemplo de Fluxograma.}
+\includegraphics[width=0.45\textwidth]{fig_flowchart.pdf}
+\caption{Fluxograma usando mermaid.js.}
 \label{fig:flowchart}
 \end{figure}
 
@@ -42,51 +100,127 @@ Detalhar e explicar seu equacionamento. Criar um pseudo-código (use o pacote al
 
 \textcolor{blue}{Obs.: Esse documento deve ter entre 5 e 8 páginas, sem contar o Apêncice.}
 
-\section{Análise dos Sinais}
+\section{An\'alise dos Sinais}
 
-Apresente o(s) sinal(is) que seu grupo está utilizando. Utilize figuras com boa resolução (evitar .png -- busque usar formatos vetorizados). A Figura~\ref{fig:grafico} traz um exemplo de gráfico de sinal.
+% TODO: [Análise dos Sinais — Caracterização Espectral]
+% Insight: Ao calcular a FFT do sinal com ruído, identifica-se que o pico da energia
+% de ruído se localiza em aproximadamente 329,8 Hz — próximo ao 5° harmônico
+% (300 Hz, derivado de 5×60 Hz). O sinal sem ruído apresenta energia dominante em
+% 60 Hz (fundamental) e harmônicos ímpares (180 Hz, 300 Hz, 420 Hz), característicos
+% de cargas não-lineares retificadoras. O ruído de medição é predominantemente
+% de banda larga (broadband) com concentração abaixo de 600 Hz.
+%
+% Insight: A frequência de corte escolhida foi fc = 600 Hz (10° harmônico), preservando
+% todo o conteúdo harmônico relevante do sinal de corrente enquanto atenua o ruído
+% de alta frequência. Uma escolha de fc < 300 Hz eliminaria harmônicos reais do sinal
+% pós-transitório, aumentando artificialmente o RMSE por perda de informação de carga.
+
+Apresente o(s) sinal(is) que seu grupo está utilizando. O sinal de corrente foi amostrado a $f_s = 7680$ Hz (128 amostras/ciclo $\times$ 60 Hz), totalizando $N=1537$ amostras em aproximadamente $0{,}20$ s (12 ciclos). A Figura~\ref{fig:comparison} apresenta a comparação entre o sinal com ruído, o sinal sem ruído de referência e o sinal após a filtragem FIR ótima.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.45\textwidth]{ex_fig2.pdf}
-\caption{Exemplo de Gráfico para Sinais.}
-\label{fig:grafico}
+\includegraphics[width=0.48\textwidth]{fig_comparison.pdf}
+\caption{Comparação entre o sinal com ruído de medição, o sinal sem ruído (referência) e o sinal filtrado com o melhor filtro FIR (Janela: Hamming, 32 taps, ordem 31, RMSE $= 0{,}7023$~A).}
+\label{fig:comparison}
 \end{figure}
 
-Explique as parametrizações testadas para o algoritmo de processamento digital de sinais utilizado (se houver). 
+Explique as parametrizações testadas para o algoritmo de processamento digital de sinais utilizado. Foram testadas 3 funções de janelamento (Hamming, Blackman e Kaiser com $\beta=8{,}6$) combinadas com 3 ordens de filtro (31, 63 e 127 taps correspondendo a 32, 64 e 128 coeficientes), totalizando 9 configurações. A filtragem foi aplicada com fase zero via \texttt{filtfilt} para eliminação do atraso de grupo na avaliação. A Tabela~\ref{tab:rmse} consolida os resultados de RMSE para cada combinação.
 
-Demonstre, de preferência graficamente, as saídas do algoritmo de processamento digital de sinais utilizado. Ou traga valores tabelados. A Tabela~\ref{tab:results} exemplifica a tabulação de dados para apresentação de resultados.
+% TODO: [Análise dos Sinais — Discussão da Tabela RMSE]
+% Insight: O resultado contraintuitivo da tabela é que a janela Hamming com APENAS
+% 32 taps (ordem 31) obteve o menor RMSE (0,7023 A), superando configurações de
+% ordem mais alta. Isso ocorre por três razões:
+%   1. O sinal é curto (1537 amostras = 12 ciclos). Filtros de ordem alta com filtfilt
+%      requerem padding de 3×(N-1) amostras nas bordas, causando artefatos nas extremidades.
+%   2. A banda de transição da janela Hamming a 32 taps é suficientemente estreita para
+%      rejeitar o ruído sem atenuar os harmônicos relevantes do sinal.
+%   3. Filtros de maior ordem introduzem maior atraso de grupo em implementação causal
+%      (lfilter): 2,0 ms (32 taps) vs. 8,2 ms (128 taps) — o custo computacional cresce
+%      linearmente com a ordem sem ganho proporcional em RMSE nesta aplicação.
+%
+% Insight: A janela Blackman com 64 taps (RMSE=0,7034) é praticamente equivalente ao
+% melhor resultado, com atenuação na stop-band ~74 dB (vs. ~41 dB do Hamming). Para
+% aplicações onde supressão de interferências de alta frequência é crítica (e.g., sinais
+% próximos a conversores de frequência), Blackman 64 taps seria preferível ao Hamming 32.
 
 \begin{table}[!h]
-\renewcommand{\arraystretch}{1.2}
-\caption{Dados tabulados.}
-\label{tab:results}
+\renewcommand{\arraystretch}{1.3}
+\caption{RMSE (A) do sinal filtrado em relação ao sinal sem ruído, por janela e número de taps do filtro FIR. Melhor resultado destacado em \textbf{negrito}.}
+\label{tab:rmse}
 \centering
-\begin{tabular}{|c|ccccc|}
+\begin{tabular}{|l|c|c|c|}
 \hline
-\multirow{2}{*}{\textbf{Zone}} & \multicolumn{5}{c|}{\textbf{MRE}} \\
- & \textbf{6-pulse} & \textbf{12-pulse} & \textbf{SFC} & \textbf{DC motor} & \textbf{TCR} \\
+\multirow{2}{*}{\textbf{Janela}} & \multicolumn{3}{c|}{\textbf{Número de \textit{Taps} (Ordem)}} \\
+ & \textbf{32 (ord. 31)} & \textbf{64 (ord. 63)} & \textbf{128 (ord. 127)} \\
 \hline
-\textbf{1} & 15.2\% & 14.4\% & 32.2\% & 5.9\% & 35.2\% \\
-\textbf{2} & 10.3\% & 12.0\%  & 7.1\% & 5.3\%  & 19.7\% \\
-\textbf{3} & 0.6\% & 2.3\%  & 2.2\% & 1.3\%  & 0.5\% \\
-\hline
-\textbf{General} & 6.9\%  & 8.2\%  & 9.4\% & 3.7\%  & 14\% \\
+\textbf{Hamming}              & \textbf{0,7023} & 0,7231 & 0,7603 \\
+\textbf{Blackman}             & 0,7658          & 0,7034 & 0,7457 \\
+\textbf{Kaiser ($\beta=8{,}6$)} & 0,7663        & 0,7035 & 0,7458 \\
 \hline
 \end{tabular}
 \end{table}
 
-Apresente e discuta os resultados finais de seu projeto. Pode usar gráficos e/ou tabelas. Entretanto, precisam ser devidamente explicados.
+Demonstre, de preferência graficamente, as saídas do algoritmo de processamento digital de sinais utilizado. A Figura~\ref{fig:transient} apresenta o instante de inserção da carga não-linear detectado programaticamente pelo método de RMS deslizante com detector de gradiente máximo.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\textwidth]{fig_transient.pdf}
+\caption{Detecção programática da inserção da carga não-linear. A linha tracejada indica o instante detectado em $t = 47{,}27$ ms (amostra 363, ciclo $\approx 2{,}84$). O painel inferior mostra o RMS deslizante de 1 ciclo (128 amostras) cujo gradiente máximo identifica o transitório.}
+\label{fig:transient}
+\end{figure}
+
+% TODO: [Análise dos Sinais — Discussão do Transitório]
+% Insight: O transitório foi detectado na amostra 363 (t ≈ 47,27 ms, ciclo ≈ 2,84),
+% com validação cruzada no sinal sem ruído (amostra 364, t ≈ 47,40 ms) — diferença
+% de apenas 1 amostra (≈ 0,13 ms), confirmando a precisão do método.
+%
+% Insight: A inserção da carga não-linear no ciclo ~2,8 de 12 totais (≈ 23% do sinal)
+% explica o comportamento bimodal: pré-transitório o sinal é quase senoidal puro (60 Hz)
+% com amplitude ≈ 2–3 A; pós-transitório a amplitude salta para ≈ 17–18 A, com
+% contribuição significativa de harmônicos ímpares (3°=180 Hz, 5°=300 Hz, 7°=420 Hz)
+% típicos de retificadores trifásicos de 6 pulsos ou acionamentos CA/CC.
+%
+% Insight: O método de RMS deslizante é robusto ao ruído porque a média energética
+% sobre 128 amostras (1 ciclo completo) cancela o ruído de média zero, destacando
+% apenas a variação de potência de regime permanente. O gradiente então age como
+% um detector de borda (edge detector) no domínio da energia.
+
+Apresente e discuta os resultados finais de seu projeto. A partir da Tabela~\ref{tab:rmse} e da Figura~\ref{fig:comparison}, o filtro FIR com janela Hamming e 32 \textit{taps} (ordem 31) apresentou o melhor compromisso entre qualidade de filtragem (RMSE = 0,7023 A) e custo computacional (menor número de multiplicações por amostra).
 
 \section{Conclusões}
 
-Apresente as conclusões obtidas pelo grupo em relação à aplicação do algoritmo. 
+% TODO: [Conclusões]
+% Hint: Resuma que o projeto FIR pelo método das janelas reduziu com sucesso o ruído
+% de medição do sinal de corrente. O melhor resultado foi obtido com janela Hamming,
+% 32 taps (ordem 31), atingindo RMSE = 0,7023 A — o melhor equilíbrio entre qualidade
+% de filtragem e custo computacional (32 multiplicações por amostra).
+%
+% Hint: Mencione que o detector de transitório por RMS deslizante + gradiente máximo
+% identificou com precisão a inserção da carga não-linear na amostra 363
+% (t ≈ 47,27 ms), com erro de apenas 1 amostra em relação ao sinal de referência.
+%
+% Hint: Discuta o trade-off entre custo computacional e qualidade: filtros de ordem
+% maior (128 taps) consomem ~4× mais operações que o filtro de 32 taps, porém
+% resultam em RMSE até 8% maior neste sinal específico — demonstrando que ordem
+% mais alta não implica necessariamente melhor desempenho para sinais curtos.
+%
+% Hint: Sugira melhorias futuras: (1) filtro adaptativo LMS/RLS para rastreamento
+% de ruído variante no tempo; (2) método overlap-add para filtragem eficiente em
+% blocos de dados maiores; (3) análise harmônica de curto prazo (STFT) para
+% caracterização dinâmica das harmônicas após a inserção da carga.
+
+Apresente as conclusões obtidas pelo grupo em relação à aplicação do algoritmo.
 
 \bibliographystyle{IEEEtran}
 \bibliography{ref}
 
 \appendix
 
-Trazer o código da função da técnica de processamento digital de sinais implementada. Se o grupo implementou com base em algum repositório do GitHub, colocar tanto o código adaptado quanto o link desse repositório. Se o grupo foi auxiliado por IA Generativa para implementar o código, colocar o prompt usado e qual ferramenta foi usada (Ex.: Claude, Gemini, ChatGPT).
+\section*{Apêndice: Código Python Implementado}
+
+\textit{Implementação desenvolvida com auxílio de Claude (Anthropic, modelo Sonnet~4.6).
+Prompt principal: ``Execute the full DSP pipeline: FIR filtering with window comparison, transient detection, and LaTeX integration for the PDS final project (SEL~0615).''}
+
+\lstinputlisting[caption={Implementação completa do pipeline DSP em Python (\texttt{main.py}).},label={lst:main}]{../main.py}
 
 \end{document}
