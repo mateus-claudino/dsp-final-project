@@ -1,0 +1,92 @@
+%\newcommand{\CLASSINPUTrighttextmargin}{0.62cm}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{float}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage[boxed,lined,ruled]{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{scalefnt}
+\usepackage{booktabs}
+\usepackage[brazil]{babel}
+
+\begin{document}
+
+\title{Processamento Digital de Sinais: Nome do Algoritmo Utilizado}
+
+\author{Nome do Autor 1, Nome do Autor 2, Nome do Autor 3 e Nome do Autor 4}
+
+\maketitle
+
+\section{Fundamentação Teórica}
+
+Explicar o algoritmo de processamento digital de sinais utilizado. 
+
+Citar as referências bibliográficas utilizadas para a compreensão da fundamentação teórica do algoritmo. Por exemplo, para citar uma referência que trata de aplicações da \textit{Fast Fourier Transform} (FFT), você deve cadastrar os dados bibliográficos no arquivo ref.bib e chamar a citação da seguinte forma~\cite{cooley1969}. 
+
+Detalhar e explicar seu equacionamento. Criar um pseudo-código (use o pacote algorithm) ou um fluxograma (usar uma figura) do algoritmo. A Figura~\ref{fig:flowchart} traz um exemplo de fluxograma.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{ex_fig1.pdf}
+\caption{Exemplo de Fluxograma.}
+\label{fig:flowchart}
+\end{figure}
+
+\textcolor{red}{Obs.: Será verificado o uso de IA Generativa. Somente será aceito para fins de correção ortográfica/gramatical. Escrita feita por IA Generativa não é permitida.}
+
+\textcolor{blue}{Obs.: Esse documento deve ter entre 5 e 8 páginas, sem contar o Apêncice.}
+
+\section{Análise dos Sinais}
+
+Apresente o(s) sinal(is) que seu grupo está utilizando. Utilize figuras com boa resolução (evitar .png -- busque usar formatos vetorizados). A Figura~\ref{fig:grafico} traz um exemplo de gráfico de sinal.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.45\textwidth]{ex_fig2.pdf}
+\caption{Exemplo de Gráfico para Sinais.}
+\label{fig:grafico}
+\end{figure}
+
+Explique as parametrizações testadas para o algoritmo de processamento digital de sinais utilizado (se houver). 
+
+Demonstre, de preferência graficamente, as saídas do algoritmo de processamento digital de sinais utilizado. Ou traga valores tabelados. A Tabela~\ref{tab:results} exemplifica a tabulação de dados para apresentação de resultados.
+
+\begin{table}[!h]
+\renewcommand{\arraystretch}{1.2}
+\caption{Dados tabulados.}
+\label{tab:results}
+\centering
+\begin{tabular}{|c|ccccc|}
+\hline
+\multirow{2}{*}{\textbf{Zone}} & \multicolumn{5}{c|}{\textbf{MRE}} \\
+ & \textbf{6-pulse} & \textbf{12-pulse} & \textbf{SFC} & \textbf{DC motor} & \textbf{TCR} \\
+\hline
+\textbf{1} & 15.2\% & 14.4\% & 32.2\% & 5.9\% & 35.2\% \\
+\textbf{2} & 10.3\% & 12.0\%  & 7.1\% & 5.3\%  & 19.7\% \\
+\textbf{3} & 0.6\% & 2.3\%  & 2.2\% & 1.3\%  & 0.5\% \\
+\hline
+\textbf{General} & 6.9\%  & 8.2\%  & 9.4\% & 3.7\%  & 14\% \\
+\hline
+\end{tabular}
+\end{table}
+
+Apresente e discuta os resultados finais de seu projeto. Pode usar gráficos e/ou tabelas. Entretanto, precisam ser devidamente explicados.
+
+\section{Conclusões}
+
+Apresente as conclusões obtidas pelo grupo em relação à aplicação do algoritmo. 
+
+\bibliographystyle{IEEEtran}
+\bibliography{ref}
+
+\appendix
+
+Trazer o código da função da técnica de processamento digital de sinais implementada. Se o grupo implementou com base em algum repositório do GitHub, colocar tanto o código adaptado quanto o link desse repositório. Se o grupo foi auxiliado por IA Generativa para implementar o código, colocar o prompt usado e qual ferramenta foi usada (Ex.: Claude, Gemini, ChatGPT).
+
+\end{document}
